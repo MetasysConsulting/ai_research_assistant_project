@@ -1,9 +1,10 @@
 .page {
   display: flex;
   align-items: flex-start;
-  font-family: var(--font-geist-sans);
-  background: #f3f6fb;
-  color: #111827;
+  background:
+    radial-gradient(circle at top right, #dbeafe 0%, rgba(219, 234, 254, 0.25) 35%, transparent 65%),
+    linear-gradient(180deg, #f8faff 0%, #f2f6ff 100%);
+  color: #0f172a;
   min-height: 100vh;
 }
 
@@ -13,7 +14,7 @@
   left: 0;
   width: 62px;
   height: 100vh;
-  background: #0f4ad8;
+  background: linear-gradient(180deg, #1d4ed8 0%, #1e40af 100%);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -24,7 +25,7 @@
 .leftRail button {
   width: 36px;
   height: 36px;
-  border: 1px solid rgba(255, 255, 255, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.32);
   background: transparent;
   color: #fff;
   border-radius: 8px;
@@ -37,7 +38,7 @@
   height: 36px;
   border-radius: 8px;
   background: #fff;
-  color: #0f4ad8;
+  color: #1d4ed8;
   font-size: 12px;
   font-weight: 700;
   display: grid;
@@ -51,18 +52,20 @@
 .main {
   display: flex;
   width: 100%;
-  max-width: 1240px;
+  max-width: 1280px;
   flex-direction: column;
   gap: 14px;
-  padding: 24px 24px 60px 84px;
+  padding: 24px 24px 70px 84px;
 }
 
 .main h1 {
-  font-size: 28px;
+  font-size: 32px;
+  font-weight: 700;
 }
 
 .subtitle {
-  color: #4b5563;
+  color: #475569;
+  max-width: 720px;
 }
 
 .headerRow {
@@ -78,10 +81,10 @@
   gap: 6px;
   font-size: 12px;
   color: #1e3a8a;
-  background: #eff6ff;
-  border: 1px solid #bfdbfe;
-  border-radius: 10px;
-  padding: 10px 12px;
+  background: linear-gradient(180deg, #eff6ff 0%, #dbeafe 100%);
+  border: 1px solid #93c5fd;
+  border-radius: 14px;
+  padding: 12px 14px;
 }
 
 .searchCard,
@@ -91,11 +94,14 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
-  border-radius: 10px;
-  padding: 16px;
-  box-shadow: 0 10px 24px -20px rgba(17, 24, 39, 0.25);
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid #dbe5f5;
+  border-radius: 16px;
+  padding: 18px;
+  box-shadow:
+    0 12px 30px -22px rgba(15, 23, 42, 0.35),
+    0 2px 8px -4px rgba(15, 23, 42, 0.12);
+  backdrop-filter: blur(6px);
 }
 
 .searchGrid {
@@ -106,9 +112,12 @@
 
 .searchGrid label {
   display: block;
-  font-size: 13px;
+  font-size: 12px;
   margin-bottom: 5px;
-  font-weight: 600;
+  font-weight: 700;
+  color: #334155;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .form label {
@@ -121,11 +130,22 @@
 .filters select,
 .form textarea {
   width: 100%;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
   padding: 10px 12px;
   font-size: 14px;
   font-family: inherit;
+  background: #fff;
+  color: #0f172a;
+}
+
+.searchCard input:focus,
+.filters input:focus,
+.filters select:focus,
+.form textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
 }
 
 .actionsRow {
@@ -142,23 +162,35 @@
 
 .tabBar {
   display: flex;
-  gap: 8px;
+  gap: 10px;
   flex-wrap: wrap;
+  padding: 4px;
+  background: rgba(255, 255, 255, 0.75);
+  border: 1px solid #dbe5f5;
+  border-radius: 14px;
+  width: fit-content;
 }
 
 .tabBar button {
-  border: 1px solid #cbd5e1;
-  background: #fff;
-  border-radius: 8px;
-  padding: 8px 12px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #1e293b;
+  border-radius: 10px;
+  padding: 9px 13px;
   font-weight: 600;
   cursor: pointer;
+  transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
+}
+
+.tabBar button:hover {
+  background: #e2e8f0;
 }
 
 .activeTab {
-  color: #fff;
-  background: #2563eb !important;
-  border-color: #2563eb !important;
+  color: #ffffff !important;
+  background: linear-gradient(180deg, #2563eb 0%, #1d4ed8 100%) !important;
+  border-color: #1d4ed8 !important;
+  box-shadow: 0 8px 18px -10px rgba(37, 99, 235, 0.8);
 }
 
 .filtersLayout {
@@ -168,10 +200,10 @@
 }
 
 .filters {
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
+  border: 1px solid #dbe5f5;
+  border-radius: 14px;
   padding: 12px;
-  background: #fafcff;
+  background: #f8fbff;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -193,8 +225,9 @@
 
 .tableWrap {
   overflow: auto;
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
+  border: 1px solid #dbe5f5;
+  border-radius: 14px;
+  background: #fff;
 }
 
 .tableWrap table {
@@ -205,16 +238,16 @@
 
 .tableWrap th,
 .tableWrap td {
-  padding: 10px;
-  font-size: 13px;
+  padding: 11px 10px;
+  font-size: 12.5px;
   text-align: left;
   border-bottom: 1px solid #edf2f7;
   vertical-align: top;
 }
 
 .tableWrap th {
-  background: #f8fafc;
-  color: #334155;
+  background: #f8fbff;
+  color: #1e293b;
   position: sticky;
   top: 0;
   z-index: 1;
@@ -224,7 +257,7 @@
   background: transparent;
   border: none;
   color: #0f172a;
-  font-size: 12px;
+  font-size: 12.5px;
   font-weight: 700;
   cursor: pointer;
   padding: 0;
@@ -235,9 +268,9 @@
 .toolbar button {
   width: fit-content;
   border: none;
-  border-radius: 8px;
+  border-radius: 10px;
   padding: 10px 14px;
-  background: #111827;
+  background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
   color: #ffffff;
   font-weight: 600;
   cursor: pointer;
@@ -280,7 +313,7 @@
 
 .collectionList button {
   text-align: left;
-  border: 1px solid #dbeafe;
+  border: 1px solid #bfdbfe;
   background: #eff6ff;
   border-radius: 6px;
   padding: 6px 8px;
@@ -295,9 +328,9 @@
 }
 
 .compareCard {
-  border: 1px solid #dbeafe;
-  border-radius: 10px;
-  background: #f8fbff;
+  border: 1px solid #cfe0ff;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #f8fbff 0%, #eef5ff 100%);
   padding: 12px;
 }
 
@@ -325,9 +358,9 @@
 }
 
 .chartCard {
-  border: 1px solid #e2e8f0;
+  border: 1px solid #dbe5f5;
   background: #fff;
-  border-radius: 10px;
+  border-radius: 14px;
   padding: 8px;
 }
 
@@ -349,7 +382,7 @@
   position: relative;
   height: 8px;
   border-radius: 8px;
-  background: #dbeafe;
+  background: linear-gradient(90deg, #dbeafe 0%, #bfdbfe 100%);
 }
 
 .timelineDot {
@@ -364,7 +397,7 @@
 
 .answer pre {
   white-space: pre-wrap;
-  font-family: var(--font-geist-mono);
+  font-family: var(--font-mono);
   font-size: 13px;
   line-height: 1.45;
 }
@@ -395,9 +428,9 @@
 }
 
 .threadSidebar {
-  border: 1px solid #dbeafe;
+  border: 1px solid #dbe5f5;
   background: #f8fbff;
-  border-radius: 10px;
+  border-radius: 14px;
   padding: 10px;
   display: flex;
   flex-direction: column;
@@ -415,9 +448,9 @@
 
 .threadList button {
   text-align: left;
-  border: 1px solid #cbd5e1;
+  border: 1px solid #dbe5f5;
   background: #fff;
-  border-radius: 8px;
+  border-radius: 10px;
   padding: 8px;
   font-size: 12px;
 }
@@ -440,10 +473,11 @@
 }
 
 .msg {
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
+  border: 1px solid #dbe5f5;
+  border-radius: 10px;
   padding: 8px;
   font-size: 13px;
+  background: #f8fbff;
 }
 
 @media (max-width: 900px) {
