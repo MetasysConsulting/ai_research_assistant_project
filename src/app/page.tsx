@@ -49,7 +49,9 @@ type ChatThread = {
 function getStoredCollections(): SavedCollection[] {
   if (typeof window === "undefined") return [];
   try {
-    const raw = window.localStorage.getItem("trialsGuru.collections");
+    const raw =
+      window.localStorage.getItem("trialLens.collections") ??
+      window.localStorage.getItem("trialsGuru.collections");
     return raw ? (JSON.parse(raw) as SavedCollection[]) : [];
   } catch {
     return [];
@@ -59,7 +61,9 @@ function getStoredCollections(): SavedCollection[] {
 function getStoredThreads(): ChatThread[] {
   if (typeof window === "undefined") return [];
   try {
-    const raw = window.localStorage.getItem("trialsGuru.threads");
+    const raw =
+      window.localStorage.getItem("trialLens.threads") ??
+      window.localStorage.getItem("trialsGuru.threads");
     return raw ? (JSON.parse(raw) as ChatThread[]) : [];
   } catch {
     return [];
@@ -202,11 +206,11 @@ export default function Home() {
   );
 
   useEffect(() => {
-    window.localStorage.setItem("trialsGuru.collections", JSON.stringify(collections));
+    window.localStorage.setItem("trialLens.collections", JSON.stringify(collections));
   }, [collections]);
 
   useEffect(() => {
-    window.localStorage.setItem("trialsGuru.threads", JSON.stringify(threads));
+    window.localStorage.setItem("trialLens.threads", JSON.stringify(threads));
   }, [threads]);
 
   useEffect(() => {
@@ -425,7 +429,7 @@ export default function Home() {
         {/* Header */}
         <div className={styles.headerRow}>
           <div>
-            <h1 className={styles.headerTitle}>Trials Guru</h1>
+            <h1 className={styles.headerTitle}>TrialLens</h1>
             <p className={styles.subtitle}>
               Discover, compare, and query clinical trials from ClinicalTrials.gov — powered by AI.
             </p>

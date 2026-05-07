@@ -15,7 +15,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Trials Guru | Research Assistant AI",
+  title: "TrialLens | Research Assistant AI",
   description: "Clinical trial search, comparison, timeline, and grounded AI chat.",
 };
 
