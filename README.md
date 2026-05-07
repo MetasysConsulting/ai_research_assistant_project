@@ -1,36 +1,67 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+## Research Assistant AI (PubMed MVP)
 
 ## Getting Started
 
-First, run the development server:
+1. Install dependencies:
+
+```bash
+npm install
+```
+
+2. Copy env file and add your OpenAI key:
+
+```bash
+cp .env.example .env.local
+```
+
+3. Start development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+4. Open [http://localhost:3000](http://localhost:3000)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## What This MVP Does
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- Searches PubMed using NCBI E-utilities
+- Shows paper metadata and abstract (when available)
+- Lets users select papers as evidence
+- Sends selected context to an LLM for Q&A
+- Returns an answer expected to include citations
 
-## Learn More
+## API Routes
 
-To learn more about Next.js, take a look at the following resources:
+- `GET /api/pubmed/search?query=...&limit=10`
+- `POST /api/ask` with JSON body:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```json
+{
+  "question": "What are safety concerns?",
+  "papers": [
+    {
+      "pmid": "123",
+      "title": "Paper title",
+      "abstract": "Paper abstract",
+      "journal": "Journal",
+      "pubDate": "2024",
+      "authors": ["A Author"],
+      "url": "https://pubmed.ncbi.nlm.nih.gov/123/"
+    }
+  ]
+}
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Deploying to Vercel
 
-## Deploy on Vercel
+1. Push this folder to GitHub.
+2. Import the repo in Vercel.
+3. Add environment variables in Vercel project settings:
+   - `OPENAI_API_KEY`
+   - `OPENAI_MODEL` (optional, defaults to `gpt-4o-mini`)
+4. Deploy.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Notes
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- This is an MVP and currently uses abstract-level context.
+- For stronger answers, next step is fetching/ingesting full text from PMC and uploaded PDFs.
