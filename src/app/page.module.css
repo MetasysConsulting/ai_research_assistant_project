@@ -646,6 +646,37 @@
   background: var(--bg-surface2);
 }
 
+.compareNotesCard {
+  border: var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface2);
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.compareNotesHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.compareNotesInput {
+  width: 100%;
+  border: var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--text-primary);
+  background: #fff;
+  resize: vertical;
+}
+
 /* ─── Timeline ───────────────────────────────────────── */
 .chartCard {
   border: var(--border);
@@ -1181,6 +1212,38 @@
   color: var(--text-secondary);
   font-size: 12px;
   line-height: 1.45;
+}
+
+.litSessionsCard {
+  border: var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface2);
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.litSessionList {
+  display: grid;
+  gap: 6px;
+}
+
+.litSessionItem {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+}
+
+.sessionDeleteBtn {
+  border: 1px solid #fecaca;
+  border-radius: var(--radius-sm);
+  background: #fff1f2;
+  color: #be123c;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
 }
 
 /* ─── Responsive ─────────────────────────────────────── */

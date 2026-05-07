@@ -46,6 +46,20 @@ type ChatThread = {
   createdAt: string;
 };
 
+type LitSession = {
+  id: string;
+  name: string;
+  query: string;
+  limit: number;
+  yearsBack: number;
+  prioritizeRct: boolean;
+  includeReviews: boolean;
+  shortlist: ShortlistPaper[];
+  selectedPmids: string[];
+  messages: ChatMessage[];
+  createdAt: string;
+};
+
 function getStoredCollections(): SavedCollection[] {
   if (typeof window === "undefined") return [];
   try {
@@ -65,6 +79,16 @@ function getStoredThreads(): ChatThread[] {
       window.localStorage.getItem("trialLens.threads") ??
       window.localStorage.getItem("trialsGuru.threads");
     return raw ? (JSON.parse(raw) as ChatThread[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function getStoredLitSessions(): LitSession[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem("trialLens.litSessions");
+    return raw ? (JSON.parse(raw) as LitSession[]) : [];
   } catch {
     return [];
   }
@@ -173,6 +197,9 @@ export default function Home() {
   const [litQuestion, setLitQuestion] = useState("");
   const [litLoadingAsk, setLitLoadingAsk] = useState(false);
   const [litMessages, setLitMessages] = useState<ChatMessage[]>([]);
+  const [compareNotes, setCompareNotes] = useState("");
+  const [litSessions, setLitSessions] = useState<LitSession[]>(getStoredLitSessions);
+  const [litSessionName, setLitSessionName] = useState("");
 
   const selectedStudies = useMemo(
     () => studies.filter((study) => selectedStudyIds.has(study.studyId)),
@@ -229,6 +256,10 @@ export default function Home() {
   }, [threads]);
 
   useEffect(() => {
+    window.localStorage.setItem("trialLens.litSessions", JSON.stringify(litSessions));
+  }, [litSessions]);
+
+  useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [activeThread?.messages, loadingAsk]);
 
@@ -262,6 +293,91 @@ export default function Home() {
     () => litShortlist.filter((paper) => litSelectedPmids.has(paper.pmid)),
     [litShortlist, litSelectedPmids],
   );
+
+  const exportLitShortlistCsv = () => {
+    if (!litShortlist.length) return;
+    const header = ["PMID", "Title", "Journal", "Pub Date", "Score", "Signals", "Reasons", "URL"];
+    const rows = litShortlist.map((paper) => [
+      paper.pmid,
+      paper.title,
+      paper.journal,
+      paper.pubDate,
+      String(paper.shortlistScore),
+      paper.studySignals.join(" | "),
+      paper.shortlistReasons.join(" | "),
+      paper.url,
+    ]);
+    const csv = [header, ...rows]
+      .map((row) => row.map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(","))
+      .join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "lit-shortlist.csv";
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const exportLitShortlistJson = () => {
+    if (!litShortlist.length) return;
+    const blob = new Blob([JSON.stringify(litShortlist, null, 2)], {
+      type: "application/json;charset=utf-8;",
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "lit-shortlist.json";
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const addSelectedPmidsToCompareNotes = () => {
+    if (!selectedLitPapers.length) return;
+    const lines = selectedLitPapers.map((paper) => `- PMID ${paper.pmid}: ${paper.title}`);
+    const block = `\n\nFrom Lit Explorer (${new Date().toLocaleString()}):\n${lines.join("\n")}`;
+    setCompareNotes((prev) => `${prev}${block}`.trim());
+    setActiveTab("compare");
+  };
+
+  const saveLitSession = () => {
+    if (!litShortlist.length) return;
+    const trimmed = litSessionName.trim();
+    const name = trimmed || `Lit Session ${new Date().toLocaleDateString()}`;
+    const session: LitSession = {
+      id: `lit-${Date.now()}`,
+      name,
+      query: litQuery,
+      limit: litLimit,
+      yearsBack: litYearsBack,
+      prioritizeRct: litPrioritizeRct,
+      includeReviews: litIncludeReviews,
+      shortlist: litShortlist,
+      selectedPmids: Array.from(litSelectedPmids),
+      messages: litMessages,
+      createdAt: new Date().toISOString(),
+    };
+    setLitSessions((prev) => [session, ...prev]);
+    setLitSessionName("");
+  };
+
+  const loadLitSession = (session: LitSession) => {
+    setLitQuery(session.query);
+    setLitLimit(session.limit);
+    setLitYearsBack(session.yearsBack);
+    setLitPrioritizeRct(session.prioritizeRct);
+    setLitIncludeReviews(session.includeReviews);
+    setLitShortlist(session.shortlist);
+    setLitSelectedPmids(new Set(session.selectedPmids));
+    setLitMessages(session.messages);
+    setLitTotalCandidates(session.shortlist.length);
+    setLitQuestion("");
+    setLitError("");
+  };
+
+  const deleteLitSession = (sessionId: string) => {
+    setLitSessions((prev) => prev.filter((session) => session.id !== sessionId));
+  };
 
   const selectVisible = () => setSelectedStudyIds(new Set(filteredStudies.map((s) => s.studyId)));
 
@@ -763,6 +879,26 @@ export default function Home() {
         {activeTab === "compare" && (
           <section className={styles.panel}>
             <p className={styles.panelTitle}>⚖️ Compare Selected Trials</p>
+            <div className={styles.compareNotesCard}>
+              <div className={styles.compareNotesHead}>
+                <strong>Comparison Notes</strong>
+                <button
+                  type="button"
+                  className={styles.btnSecondary}
+                  onClick={() => setCompareNotes("")}
+                  disabled={!compareNotes.trim()}
+                >
+                  Clear Notes
+                </button>
+              </div>
+              <textarea
+                className={styles.compareNotesInput}
+                value={compareNotes}
+                onChange={(e) => setCompareNotes(e.target.value)}
+                placeholder="Keep your synthesis notes here. Lit Explorer can append selected PMIDs with one click."
+                rows={5}
+              />
+            </div>
             {!selectedStudies.length ? (
               <div className={styles.emptyState}>
                 <span className={styles.emptyIcon}>⚖️</span>
@@ -1047,10 +1183,53 @@ export default function Home() {
                 <button type="submit" className={styles.btnPrimary} disabled={litLoading}>
                   {litLoading ? "Shortlisting..." : "🔎 Build shortlist"}
                 </button>
+                <button type="button" className={styles.btnSecondary} onClick={exportLitShortlistCsv} disabled={!litShortlist.length}>
+                  ⬇ Export CSV
+                </button>
+                <button type="button" className={styles.btnSecondary} onClick={exportLitShortlistJson} disabled={!litShortlist.length}>
+                  ⬇ Export JSON
+                </button>
+                <button
+                  type="button"
+                  className={styles.btnSecondary}
+                  onClick={addSelectedPmidsToCompareNotes}
+                  disabled={!selectedLitPapers.length}
+                >
+                  ➕ Send PMIDs to Compare Notes
+                </button>
               </div>
             </form>
 
             {litError && <div className={styles.errorBar}>{litError}</div>}
+
+            <div className={styles.litSessionsCard}>
+              <div className={styles.collectionForm}>
+                <input
+                  value={litSessionName}
+                  onChange={(e) => setLitSessionName(e.target.value)}
+                  placeholder="Session name (optional)"
+                />
+                <button type="button" className={styles.btnPrimary} onClick={saveLitSession} disabled={!litShortlist.length}>
+                  Save Session
+                </button>
+              </div>
+              <div className={styles.litSessionList}>
+                {litSessions.slice(0, 8).map((session) => (
+                  <div key={session.id} className={styles.litSessionItem}>
+                    <button type="button" className={styles.collectionItem} onClick={() => loadLitSession(session)}>
+                      📚 {session.name} ({session.shortlist.length} papers)
+                    </button>
+                    <button
+                      type="button"
+                      className={styles.sessionDeleteBtn}
+                      onClick={() => deleteLitSession(session.id)}
+                    >
+                      Delete
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
 
             <div className={styles.litLayout}>
               <div className={styles.litPaperList}>
