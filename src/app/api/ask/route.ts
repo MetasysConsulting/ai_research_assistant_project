@@ -16,6 +16,7 @@ export async function POST(request: NextRequest) {
   const question = body.question?.trim();
   const papers = Array.isArray(body.papers) ? body.papers.slice(0, 10) : [];
   const studies = Array.isArray(body.studies) ? body.studies.slice(0, 10) : [];
+  const history = Array.isArray(body.history) ? body.history.slice(-20) : [];
 
   if (!question) {
     return NextResponse.json({ error: "Question is required." }, { status: 400 });
@@ -73,6 +74,10 @@ export async function POST(request: NextRequest) {
         temperature: 0.2,
         messages: [
           { role: "system", content: systemPrompt },
+          ...history.map((message) => ({
+            role: message.role,
+            content: message.content,
+          })),
           {
             role: "user",
             content: `Question:\n${question}\n\nPaper context:\n${context}`,

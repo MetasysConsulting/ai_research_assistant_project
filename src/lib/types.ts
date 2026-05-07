@@ -35,6 +35,10 @@ export type AskRequestBody = {
   question: string;
   papers?: PubMedPaper[];
   studies?: TrialStudy[];
+  history?: Array<{
+    role: "user" | "assistant";
+    content: string;
+  }>;
 };
 
 export type ShortlistRequestBody = {

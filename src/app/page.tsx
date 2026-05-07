@@ -258,6 +258,7 @@ export default function Home() {
     };
     setThreads((prev) => [thread, ...prev]);
     setActiveThreadId(thread.id);
+    return thread.id;
   };
 
   const setSort = (key: SortKey) => {
@@ -298,29 +299,54 @@ export default function Home() {
 
   const handleAsk = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    const trimmedQuestion = question.trim();
+    if (!trimmedQuestion) return;
+
     setError("");
     setLoadingAsk(true);
     setAnswer("");
+
+    let threadId = activeThreadId;
+    if (!threadId) {
+      threadId = createThreadFromSelection() || null;
+    }
+
+    const threadForHistory = threadId
+      ? threads.find((thread) => thread.id === threadId) ?? null
+      : null;
+
     try {
       const res = await fetch("/api/ask", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question, studies: selectedStudies }),
+        body: JSON.stringify({
+          question: trimmedQuestion,
+          studies: selectedStudies,
+          history: (threadForHistory?.messages || []).map((message) => ({
+            role: message.role,
+            content: message.content,
+          })),
+        }),
       });
       const data = (await res.json()) as { answer?: string; error?: string };
       if (!res.ok) throw new Error(data.error || "Failed to answer question.");
       setAnswer(data.answer || "");
-      if (activeThread) {
-        const updated: ChatThread = {
-          ...activeThread,
-          messages: [
-            ...activeThread.messages,
-            { role: "user", content: question, createdAt: new Date().toISOString() },
-            { role: "assistant", content: data.answer || "", createdAt: new Date().toISOString() },
-          ],
-        };
-        setThreads((prev) => prev.map((thread) => (thread.id === updated.id ? updated : thread)));
-      }
+      if (!threadId) return;
+      setThreads((prev) =>
+        prev.map((thread) =>
+          thread.id !== threadId
+            ? thread
+            : {
+                ...thread,
+                messages: [
+                  ...thread.messages,
+                  { role: "user", content: trimmedQuestion, createdAt: new Date().toISOString() },
+                  { role: "assistant", content: data.answer || "", createdAt: new Date().toISOString() },
+                ],
+              },
+        ),
+      );
+      setQuestion("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Question failed.");
     } finally {
