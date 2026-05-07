@@ -18,7 +18,7 @@ import {
   YAxis,
 } from "recharts";
 import styles from "./page.module.css";
-import type { TrialStudy } from "@/lib/types";
+import type { PubMedPaper, ShortlistPaper, TrialStudy } from "@/lib/types";
 
 type SortKey = "studyId" | "title" | "trialStartDate" | "status" | "primaryEndpoint" | "phase";
 type SortDirection = "asc" | "desc";
@@ -123,7 +123,7 @@ export default function Home() {
   const [textSearch, setTextSearch] = useState("GLP-1");
   const [studies, setStudies] = useState<TrialStudy[]>([]);
   const [selectedStudyIds, setSelectedStudyIds] = useState<Set<string>>(new Set());
-  const [activeTab, setActiveTab] = useState<"results" | "compare" | "timeline" | "chat">("results");
+  const [activeTab, setActiveTab] = useState<"results" | "compare" | "timeline" | "chat" | "lit">("results");
 
   const [statusFilter, setStatusFilter] = useState("all");
   const [phaseFilter, setPhaseFilter] = useState("all");
@@ -158,6 +158,21 @@ export default function Home() {
 
   const chatFormRef = useRef<HTMLFormElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const litMessagesEndRef = useRef<HTMLDivElement>(null);
+
+  const [litQuery, setLitQuery] = useState("obesity GLP-1 randomized trial");
+  const [litLimit, setLitLimit] = useState(10);
+  const [litYearsBack, setLitYearsBack] = useState(8);
+  const [litPrioritizeRct, setLitPrioritizeRct] = useState(true);
+  const [litIncludeReviews, setLitIncludeReviews] = useState(true);
+  const [litLoading, setLitLoading] = useState(false);
+  const [litError, setLitError] = useState("");
+  const [litShortlist, setLitShortlist] = useState<ShortlistPaper[]>([]);
+  const [litSelectedPmids, setLitSelectedPmids] = useState<Set<string>>(new Set());
+  const [litTotalCandidates, setLitTotalCandidates] = useState(0);
+  const [litQuestion, setLitQuestion] = useState("");
+  const [litLoadingAsk, setLitLoadingAsk] = useState(false);
+  const [litMessages, setLitMessages] = useState<ChatMessage[]>([]);
 
   const selectedStudies = useMemo(
     () => studies.filter((study) => selectedStudyIds.has(study.studyId)),
@@ -217,6 +232,10 @@ export default function Home() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [activeThread?.messages, loadingAsk]);
 
+  useEffect(() => {
+    litMessagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [litMessages, litLoadingAsk]);
+
   const toggleSelection = (studyId: string) => {
     setSelectedStudyIds((prev) => {
       const next = new Set(prev);
@@ -238,6 +257,11 @@ export default function Home() {
     setColumnFilter("");
     setColumnFilterKey("all");
   };
+
+  const selectedLitPapers = useMemo(
+    () => litShortlist.filter((paper) => litSelectedPmids.has(paper.pmid)),
+    [litShortlist, litSelectedPmids],
+  );
 
   const selectVisible = () => setSelectedStudyIds(new Set(filteredStudies.map((s) => s.studyId)));
 
@@ -378,6 +402,95 @@ export default function Home() {
     }
   };
 
+  const handleLitSearch = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const query = litQuery.trim();
+    if (!query) return;
+    setLitLoading(true);
+    setLitError("");
+    try {
+      const response = await fetch("/api/pubmed/shortlist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          query,
+          limit: litLimit,
+          yearsBack: litYearsBack,
+          prioritizeRct: litPrioritizeRct,
+          includeReviews: litIncludeReviews,
+        }),
+      });
+      const data = (await response.json()) as {
+        shortlist?: ShortlistPaper[];
+        totalCandidates?: number;
+        error?: string;
+      };
+      if (!response.ok) throw new Error(data.error || "Failed to shortlist papers.");
+      const shortlist = data.shortlist || [];
+      setLitShortlist(shortlist);
+      setLitSelectedPmids(new Set(shortlist.slice(0, Math.min(4, shortlist.length)).map((p) => p.pmid)));
+      setLitTotalCandidates(data.totalCandidates || 0);
+      setLitMessages([]);
+      setLitQuestion("");
+    } catch (err) {
+      setLitError(err instanceof Error ? err.message : "Lit Explorer search failed.");
+    } finally {
+      setLitLoading(false);
+    }
+  };
+
+  const toggleLitPaper = (pmid: string) => {
+    setLitSelectedPmids((prev) => {
+      const next = new Set(prev);
+      if (next.has(pmid)) next.delete(pmid);
+      else next.add(pmid);
+      return next;
+    });
+  };
+
+  const handleLitAsk = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const trimmed = litQuestion.trim();
+    if (!trimmed || litLoadingAsk || selectedLitPapers.length === 0) return;
+    setLitLoadingAsk(true);
+    setLitError("");
+    const nextUserMessage: ChatMessage = {
+      role: "user",
+      content: trimmed,
+      createdAt: new Date().toISOString(),
+    };
+    const nextHistory = [...litMessages, nextUserMessage];
+    setLitMessages(nextHistory);
+    setLitQuestion("");
+    try {
+      const response = await fetch("/api/ask", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          question: trimmed,
+          papers: selectedLitPapers as PubMedPaper[],
+          history: litMessages.map((m) => ({ role: m.role, content: m.content })),
+        }),
+      });
+      const data = (await response.json()) as { answer?: string; error?: string };
+      if (!response.ok) throw new Error(data.error || "Failed to answer.");
+      setLitMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content: data.answer || "",
+          createdAt: new Date().toISOString(),
+        },
+      ]);
+    } catch (err) {
+      setLitError(err instanceof Error ? err.message : "Failed to answer.");
+      setLitMessages((prev) => prev.filter((msg) => msg !== nextUserMessage));
+      setLitQuestion(trimmed);
+    } finally {
+      setLitLoadingAsk(false);
+    }
+  };
+
   const timelineBounds = useMemo(() => {
     const years = filteredStudies.map((s) => s.trialStartYear).filter((y): y is number => y !== null);
     if (!years.length) return null;
@@ -407,9 +520,9 @@ export default function Home() {
       {/* Left nav rail */}
       <aside className={styles.leftRail}>
         <div className={styles.railLogo}>TG</div>
-        {(["results", "compare", "timeline", "chat"] as const).map((tab, i) => {
-          const icons = ["🔬", "⚖️", "📅", "💬"];
-          const labels = ["Search", "Compare", "Timeline", "AI Chat"];
+        {(["results", "compare", "timeline", "chat", "lit"] as const).map((tab, i) => {
+          const icons = ["🔬", "⚖️", "📅", "💬", "📚"];
+          const labels = ["Search", "Compare", "Timeline", "AI Chat", "Lit Explorer"];
           return (
             <button
               key={tab}
@@ -481,6 +594,7 @@ export default function Home() {
           <button type="button" className={`${styles.tabBtn} ${activeTab === "compare" ? styles.tabActive : ""}`} onClick={() => setActiveTab("compare")}>⚖️ Compare Trials</button>
           <button type="button" className={`${styles.tabBtn} ${activeTab === "timeline" ? styles.tabActive : ""}`} onClick={() => setActiveTab("timeline")}>📅 Timelines</button>
           <button type="button" className={`${styles.tabBtn} ${activeTab === "chat" ? styles.tabActive : ""}`} onClick={() => setActiveTab("chat")}>💬 AI Assistant</button>
+          <button type="button" className={`${styles.tabBtn} ${activeTab === "lit" ? styles.tabActive : ""}`} onClick={() => setActiveTab("lit")}>📚 Lit Explorer</button>
         </div>
 
         {/* ── Results tab ── */}
@@ -887,6 +1001,169 @@ export default function Home() {
                   </div>
                 </form>
                 <p className={styles.chatHint}>Press Enter to send · Shift+Enter for newline · Context-aware multi-turn chat</p>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {activeTab === "lit" && (
+          <section className={styles.panel}>
+            <p className={styles.panelTitle}>📚 Lit Explorer (PubMed)</p>
+            <form className={styles.litSearchForm} onSubmit={handleLitSearch}>
+              <div className={styles.inputGroup}>
+                <span className={styles.inputLabel}>Research query</span>
+                <input
+                  className={styles.searchInput}
+                  value={litQuery}
+                  onChange={(e) => setLitQuery(e.target.value)}
+                  placeholder="e.g. obesity semaglutide randomized clinical trial"
+                />
+              </div>
+              <div className={styles.litControls}>
+                <label className={styles.litControlItem}>
+                  <span>Shortlist size</span>
+                  <select value={litLimit} onChange={(e) => setLitLimit(Number(e.target.value))} className={styles.filterSelect}>
+                    {[5, 8, 10, 12, 15].map((n) => (
+                      <option key={n} value={n}>{n}</option>
+                    ))}
+                  </select>
+                </label>
+                <label className={styles.litControlItem}>
+                  <span>Recency window</span>
+                  <select value={litYearsBack} onChange={(e) => setLitYearsBack(Number(e.target.value))} className={styles.filterSelect}>
+                    {[3, 5, 8, 10, 15].map((n) => (
+                      <option key={n} value={n}>Last {n} years</option>
+                    ))}
+                  </select>
+                </label>
+                <label className={styles.checkboxRow}>
+                  <input type="checkbox" checked={litPrioritizeRct} onChange={(e) => setLitPrioritizeRct(e.target.checked)} />
+                  Prioritize RCTs
+                </label>
+                <label className={styles.checkboxRow}>
+                  <input type="checkbox" checked={litIncludeReviews} onChange={(e) => setLitIncludeReviews(e.target.checked)} />
+                  Include reviews/meta-analyses
+                </label>
+                <button type="submit" className={styles.btnPrimary} disabled={litLoading}>
+                  {litLoading ? "Shortlisting..." : "🔎 Build shortlist"}
+                </button>
+              </div>
+            </form>
+
+            {litError && <div className={styles.errorBar}>{litError}</div>}
+
+            <div className={styles.litLayout}>
+              <div className={styles.litPaperList}>
+                <div className={styles.litPaperListHeader}>
+                  <strong>Shortlisted papers</strong>
+                  {litShortlist.length > 0 && (
+                    <span>{litShortlist.length} shown from {litTotalCandidates} candidates</span>
+                  )}
+                </div>
+                {litLoading ? (
+                  <div className={styles.spinnerWrap}><div className={styles.spinner} />Analyzing evidence quality...</div>
+                ) : litShortlist.length === 0 ? (
+                  <div className={styles.emptyState}>
+                    <span className={styles.emptyIcon}>📄</span>
+                    <p className={styles.emptyTitle}>No shortlisted papers yet</p>
+                    <p className={styles.emptyBody}>Run a PubMed shortlist search to pull high-signal studies with scoring reasons.</p>
+                  </div>
+                ) : (
+                  litShortlist.map((paper) => (
+                    <label key={paper.pmid} className={styles.litPaperCard}>
+                      <div className={styles.litPaperTop}>
+                        <input
+                          type="checkbox"
+                          checked={litSelectedPmids.has(paper.pmid)}
+                          onChange={() => toggleLitPaper(paper.pmid)}
+                        />
+                        <a href={paper.url} target="_blank" rel="noreferrer" className={styles.studyLink}>
+                          PMID {paper.pmid}
+                        </a>
+                        <span className={styles.badge} style={{ background: "#dbeafe", color: "#1d4ed8", border: "1px solid #93c5fd" }}>
+                          Score {paper.shortlistScore}
+                        </span>
+                      </div>
+                      <p className={styles.litPaperTitle}>{paper.title}</p>
+                      <p className={styles.litPaperMeta}>{paper.journal} • {paper.pubDate}</p>
+                      {!!paper.studySignals.length && (
+                        <p className={styles.litSignalRow}>Signals: {paper.studySignals.join(" • ")}</p>
+                      )}
+                      {!!paper.shortlistReasons.length && (
+                        <ul className={styles.litReasons}>
+                          {paper.shortlistReasons.slice(0, 3).map((reason) => (
+                            <li key={reason}>{reason}</li>
+                          ))}
+                        </ul>
+                      )}
+                    </label>
+                  ))
+                )}
+              </div>
+
+              <div className={styles.chatMain}>
+                <div className={styles.chatTopBar}>
+                  <div>
+                    <div className={styles.chatTopBarTitle}>Literature-grounded AI chat</div>
+                    <div className={styles.chatTopBarSub}>
+                      Selected papers: {selectedLitPapers.length}
+                    </div>
+                  </div>
+                </div>
+                <div className={styles.chatMessages}>
+                  {!litMessages.length ? (
+                    <div className={styles.chatWelcome}>
+                      <span className={styles.chatWelcomeIcon}>🧠</span>
+                      <p className={styles.chatWelcomeTitle}>Ask evidence-based questions</p>
+                      <p className={styles.chatWelcomeSub}>
+                        I answer only from the selected papers and include PMID citations.
+                      </p>
+                    </div>
+                  ) : (
+                    litMessages.map((msg, idx) => (
+                      <div key={`${msg.createdAt}-${idx}`} className={`${styles.msgRow} ${msg.role === "user" ? styles.msgRowUser : ""}`}>
+                        <div className={`${styles.msgAvatar} ${msg.role === "user" ? styles.msgAvatarUser : styles.msgAvatarAI}`}>
+                          {msg.role === "user" ? "You" : "AI"}
+                        </div>
+                        <div>
+                          <div className={`${styles.msgBubble} ${msg.role === "user" ? styles.msgBubbleUser : styles.msgBubbleAI}`}>
+                            {msg.content}
+                          </div>
+                          <div className={styles.msgTime} style={{ textAlign: msg.role === "user" ? "right" : "left" }}>
+                            {formatTime(msg.createdAt)}
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                  {litLoadingAsk && (
+                    <div className={styles.msgRow}>
+                      <div className={`${styles.msgAvatar} ${styles.msgAvatarAI}`}>AI</div>
+                      <div className={styles.thinking}>
+                        <div className={styles.thinkingDot} />
+                        <div className={styles.thinkingDot} />
+                        <div className={styles.thinkingDot} />
+                      </div>
+                    </div>
+                  )}
+                  <div ref={litMessagesEndRef} />
+                </div>
+                <form onSubmit={handleLitAsk}>
+                  <div className={styles.chatInputBar}>
+                    <textarea
+                      value={litQuestion}
+                      onChange={(e) => setLitQuestion(e.target.value)}
+                      onKeyDown={handleChatKeyDown}
+                      placeholder={selectedLitPapers.length ? "Ask a paper-grounded question..." : "Select papers first from shortlist..."}
+                      disabled={litLoadingAsk || selectedLitPapers.length === 0}
+                      rows={1}
+                    />
+                    <button type="submit" className={styles.chatSendBtn} disabled={litLoadingAsk || !litQuestion.trim() || selectedLitPapers.length === 0}>
+                      ➤
+                    </button>
+                  </div>
+                </form>
+                <p className={styles.chatHint}>PubMed grounded • citations expected • multi-turn memory enabled</p>
               </div>
             </div>
           </section>
