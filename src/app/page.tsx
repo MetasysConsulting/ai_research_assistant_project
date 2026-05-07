@@ -22,6 +22,8 @@ import type { TrialStudy } from "@/lib/types";
 
 type SortKey = "studyId" | "title" | "trialStartDate" | "status" | "primaryEndpoint" | "phase";
 type SortDirection = "asc" | "desc";
+type BinaryFilter = "all" | "yes" | "no";
+type FilterableColumn = "all" | "studyId" | "title" | "trialStartDate" | "status" | "primaryEndpoint" | "phase" | "diseaseNames";
 
 type SavedCollection = {
   id: string;
@@ -121,9 +123,10 @@ export default function Home() {
 
   const [statusFilter, setStatusFilter] = useState("all");
   const [phaseFilter, setPhaseFilter] = useState("all");
-  const [onlyWithPublications, setOnlyWithPublications] = useState(false);
-  const [onlyWithBiomarkers, setOnlyWithBiomarkers] = useState(false);
+  const [publicationsFilter, setPublicationsFilter] = useState<BinaryFilter>("all");
+  const [biomarkersFilter, setBiomarkersFilter] = useState<BinaryFilter>("all");
   const [columnFilter, setColumnFilter] = useState("");
+  const [columnFilterKey, setColumnFilterKey] = useState<FilterableColumn>("all");
   const [visibleColumns, setVisibleColumns] = useState({
     studyId: true,
     title: true,
@@ -162,15 +165,24 @@ export default function Home() {
     const filtered = studies.filter((study) => {
       if (statusFilter !== "all" && study.status !== statusFilter) return false;
       if (phaseFilter !== "all" && study.phase !== phaseFilter) return false;
-      if (onlyWithPublications && !study.hasPublications) return false;
-      if (onlyWithBiomarkers && study.biomarkers.length === 0) return false;
+      if (publicationsFilter === "yes" && !study.hasPublications) return false;
+      if (publicationsFilter === "no" && study.hasPublications) return false;
+      if (biomarkersFilter === "yes" && study.biomarkers.length === 0) return false;
+      if (biomarkersFilter === "no" && study.biomarkers.length > 0) return false;
       if (!q) return true;
-      return (
-        study.studyId.toLowerCase().includes(q) ||
-        study.title.toLowerCase().includes(q) ||
-        study.primaryEndpoint.toLowerCase().includes(q) ||
-        study.phase.toLowerCase().includes(q)
-      );
+      const byColumn: Record<Exclude<FilterableColumn, "all">, string> = {
+        studyId: study.studyId,
+        title: study.title,
+        trialStartDate: study.trialStartDate,
+        status: study.status,
+        primaryEndpoint: study.primaryEndpoint,
+        phase: study.phase,
+        diseaseNames: study.diseaseNames.join(", "),
+      };
+      if (columnFilterKey === "all") {
+        return Object.values(byColumn).some((value) => value.toLowerCase().includes(q));
+      }
+      return byColumn[columnFilterKey].toLowerCase().includes(q);
     });
     filtered.sort((a, b) => {
       const aValue = String(a[sortKey] ?? "").toLowerCase();
@@ -179,7 +191,7 @@ export default function Home() {
       return aValue.localeCompare(bValue) * direction;
     });
     return filtered;
-  }, [studies, statusFilter, phaseFilter, onlyWithPublications, onlyWithBiomarkers, columnFilter, sortKey, sortDirection]);
+  }, [studies, statusFilter, phaseFilter, publicationsFilter, biomarkersFilter, columnFilter, columnFilterKey, sortKey, sortDirection]);
 
   const statuses = useMemo(() => Array.from(new Set(studies.map((s) => s.status).filter(Boolean))).sort(), [studies]);
   const phases = useMemo(() => Array.from(new Set(studies.map((s) => s.phase).filter(Boolean))).sort(), [studies]);
@@ -217,9 +229,10 @@ export default function Home() {
   const clearFilters = () => {
     setStatusFilter("all");
     setPhaseFilter("all");
-    setOnlyWithPublications(false);
-    setOnlyWithBiomarkers(false);
+    setPublicationsFilter("all");
+    setBiomarkersFilter("all");
     setColumnFilter("");
+    setColumnFilterKey("all");
   };
 
   const selectVisible = () => setSelectedStudyIds(new Set(filteredStudies.map((s) => s.studyId)));
@@ -497,19 +510,35 @@ export default function Home() {
                 </div>
 
                 <div className={styles.filterSection}>
-                  <p className={styles.filterLabel}>Results</p>
-                  <label className={styles.checkboxRow}>
-                    <input type="checkbox" checked={onlyWithPublications} onChange={(e) => setOnlyWithPublications(e.target.checked)} />
-                    Has Publications
-                  </label>
-                  <label className={styles.checkboxRow}>
-                    <input type="checkbox" checked={onlyWithBiomarkers} onChange={(e) => setOnlyWithBiomarkers(e.target.checked)} />
-                    Has Biomarkers
-                  </label>
+                  <p className={styles.filterLabel}>Has Publications</p>
+                  <select className={styles.filterSelect} value={publicationsFilter} onChange={(e) => setPublicationsFilter(e.target.value as BinaryFilter)}>
+                    <option value="all">Any</option>
+                    <option value="yes">Yes</option>
+                    <option value="no">No</option>
+                  </select>
+                </div>
+
+                <div className={styles.filterSection}>
+                  <p className={styles.filterLabel}>Has Biomarkers</p>
+                  <select className={styles.filterSelect} value={biomarkersFilter} onChange={(e) => setBiomarkersFilter(e.target.value as BinaryFilter)}>
+                    <option value="all">Any</option>
+                    <option value="yes">Yes</option>
+                    <option value="no">No</option>
+                  </select>
                 </div>
 
                 <div className={styles.filterSection}>
                   <p className={styles.filterLabel}>Column search</p>
+                  <select className={styles.filterSelect} value={columnFilterKey} onChange={(e) => setColumnFilterKey(e.target.value as FilterableColumn)}>
+                    <option value="all">Any column</option>
+                    <option value="studyId">studyId</option>
+                    <option value="title">title</option>
+                    <option value="trialStartDate">trialStartDate</option>
+                    <option value="status">status</option>
+                    <option value="primaryEndpoint">primaryEndpoint</option>
+                    <option value="phase">phase</option>
+                    <option value="diseaseNames">diseaseNames</option>
+                  </select>
                   <input className={styles.filterInput} value={columnFilter} onChange={(e) => setColumnFilter(e.target.value)} placeholder="Filter any column…" />
                 </div>
 
@@ -517,10 +546,20 @@ export default function Home() {
                   <p className={styles.filterLabel}>Configure columns</p>
                   <div className={styles.columns}>
                     {(Object.keys(visibleColumns) as Array<keyof typeof visibleColumns>).map((key) => (
-                      <label key={key} className={styles.checkboxRow}>
-                        <input type="checkbox" checked={visibleColumns[key]} onChange={() => toggleColumn(key)} />
-                        {key}
-                      </label>
+                      <div key={key} className={styles.columnRow}>
+                        <span className={styles.columnName}>{key}</span>
+                        <select
+                          className={styles.columnSelect}
+                          value={visibleColumns[key] ? "show" : "hide"}
+                          onChange={(e) => {
+                            const shouldShow = e.target.value === "show";
+                            if (visibleColumns[key] !== shouldShow) toggleColumn(key);
+                          }}
+                        >
+                          <option value="show">Show</option>
+                          <option value="hide">Hide</option>
+                        </select>
+                      </div>
                     ))}
                   </div>
                 </div>
