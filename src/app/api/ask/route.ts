@@ -15,32 +15,51 @@ export async function POST(request: NextRequest) {
   const body = (await request.json()) as AskRequestBody;
   const question = body.question?.trim();
   const papers = Array.isArray(body.papers) ? body.papers.slice(0, 10) : [];
+  const studies = Array.isArray(body.studies) ? body.studies.slice(0, 10) : [];
 
   if (!question) {
     return NextResponse.json({ error: "Question is required." }, { status: 400 });
   }
 
-  if (!papers.length) {
-    return NextResponse.json({ error: "Select at least one paper." }, { status: 400 });
+  if (!papers.length && !studies.length) {
+    return NextResponse.json({ error: "Select at least one paper or study." }, { status: 400 });
   }
 
-  const context = papers
-    .map((paper, index) => {
-      return [
-        `[${index + 1}] PMID: ${paper.pmid}`,
-        `Title: ${paper.title}`,
-        `Journal: ${paper.journal}`,
-        `Date: ${paper.pubDate}`,
-        `Authors: ${paper.authors.join(", ") || "Unknown"}`,
-        `URL: ${paper.url}`,
-        `Abstract: ${paper.abstract || "No abstract available."}`,
-      ].join("\n");
-    })
-    .join("\n\n---\n\n");
+  const paperContext = papers.map((paper, index) =>
+    [
+      `[Paper ${index + 1}] PMID: ${paper.pmid}`,
+      `Title: ${paper.title}`,
+      `Journal: ${paper.journal}`,
+      `Date: ${paper.pubDate}`,
+      `Authors: ${paper.authors.join(", ") || "Unknown"}`,
+      `URL: ${paper.url}`,
+      `Abstract: ${paper.abstract || "No abstract available."}`,
+    ].join("\n"),
+  );
+
+  const studyContext = studies.map((study, index) =>
+    [
+      `[Study ${index + 1}] Study ID: ${study.studyId}`,
+      `Title: ${study.title}`,
+      `Status: ${study.status}`,
+      `Phase: ${study.phase}`,
+      `Trial Start Date: ${study.trialStartDate}`,
+      `Primary Endpoint: ${study.primaryEndpoint}`,
+      `Conditions: ${study.diseaseNames.join(", ") || "N/A"}`,
+      `Interventions: ${study.interventions.join(", ") || "N/A"}`,
+      `Sponsor: ${study.sponsor}`,
+      `Biomarkers: ${study.biomarkers.join(", ") || "N/A"}`,
+      `Publications linked: ${study.hasPublications ? "Yes" : "No"}`,
+      `Results linked: ${study.hasResults ? "Yes" : "No"}`,
+      `URL: ${study.url}`,
+    ].join("\n"),
+  );
+
+  const context = [...paperContext, ...studyContext].join("\n\n---\n\n");
 
   const systemPrompt =
-    "You are a biomedical research assistant. Answer using only the provided paper context. " +
-    "If the context is insufficient, say so clearly. Include a 'Citations' section listing PMID and URL used.";
+    "You are a biomedical research assistant. Answer using only the provided paper/study context. " +
+    "If context is insufficient, say so clearly. Include a 'Citations' section listing Study IDs/PMIDs and URLs used.";
 
   try {
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
