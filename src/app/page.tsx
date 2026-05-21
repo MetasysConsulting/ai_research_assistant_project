@@ -697,8 +697,8 @@ export default function Home() {
             <Image
               src="/triallens-logo.png"
               alt="TrialLens"
-              width={44}
-              height={44}
+              width={56}
+              height={56}
               priority
               className={styles.railLogoImage}
             />
