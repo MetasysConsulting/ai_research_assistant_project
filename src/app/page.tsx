@@ -658,31 +658,35 @@ export default function Home() {
     }).length;
     const withPublications = studies.filter((s) => s.hasPublications).length;
     const loadedCount = studies.length;
-    const discovered = meta.match(/^\d+/)?.[0];
+    const hasDataset = loadedCount > 0;
 
     return [
       {
         label: "Studies loaded",
-        value: loadedCount || discovered || "—",
-        hint: loadedCount ? "Current result set" : "Run trial search",
+        value: loadedCount,
+        hint: hasDataset ? "Current result set" : "Run trial search to populate",
+        emptyHint: "No studies in workspace yet",
       },
       {
         label: "Selected",
         value: selectedStudies.length,
-        hint: "Ready for compare & AI",
+        hint: selectedStudies.length > 0 ? "Ready for compare and AI" : "Select rows in the results table",
+        emptyHint: "Nothing selected yet",
       },
       {
         label: "Publications",
         value: withPublications,
-        hint: "Trials with linked papers",
+        hint: hasDataset ? "Trials with linked papers" : "Available after trial search",
+        emptyHint: "No publication links found",
       },
       {
         label: "Recruiting",
         value: recruiting,
-        hint: "Active enrollment signal",
+        hint: hasDataset ? "Active enrollment signal" : "Available after trial search",
+        emptyHint: "No recruiting trials in view",
       },
     ];
-  }, [studies, selectedStudies.length, meta]);
+  }, [studies, selectedStudies.length]);
 
   return (
     <div className={styles.page}>
@@ -736,13 +740,24 @@ export default function Home() {
             </p>
           </div>
           <div className={styles.statsGrid}>
-            {dashboardStats.map((stat) => (
-              <div key={stat.label} className={styles.statCard}>
-                <span className={styles.statLabel}>{stat.label}</span>
-                <span className={styles.statValue}>{stat.value}</span>
-                <span className={styles.statHint}>{stat.hint}</span>
-              </div>
-            ))}
+            {dashboardStats.map((stat) => {
+              const isZero = stat.value === 0;
+              return (
+                <div
+                  key={stat.label}
+                  className={`${styles.statCard} ${isZero ? styles.statCardMuted : styles.statCardActive}`}
+                >
+                  <span className={styles.statLabel}>{stat.label}</span>
+                  <div className={styles.statValueRow}>
+                    <span className={`${styles.statValue} ${isZero ? styles.statValueZero : ""}`}>
+                      {stat.value.toLocaleString()}
+                    </span>
+                    {isZero && <span className={styles.statStatus}>No activity</span>}
+                  </div>
+                  <span className={styles.statHint}>{isZero ? stat.emptyHint : stat.hint}</span>
+                </div>
+              );
+            })}
           </div>
         </section>
 
