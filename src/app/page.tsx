@@ -161,9 +161,9 @@ function formatTime(iso: string) {
 }
 
 export default function Home() {
-  const [condition, setCondition] = useState("obesity");
-  const [intervention, setIntervention] = useState("semaglutide");
-  const [textSearch, setTextSearch] = useState("GLP-1");
+  const [condition, setCondition] = useState("");
+  const [intervention, setIntervention] = useState("");
+  const [textSearch, setTextSearch] = useState("");
   const [studies, setStudies] = useState<TrialStudy[]>([]);
   const [selectedStudyIds, setSelectedStudyIds] = useState<Set<string>>(new Set());
   const [activeTab, setActiveTab] = useState<"results" | "compare" | "timeline" | "chat" | "lit">("results");
@@ -203,7 +203,7 @@ export default function Home() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const litMessagesEndRef = useRef<HTMLDivElement>(null);
 
-  const [litQuery, setLitQuery] = useState("obesity GLP-1 randomized trial");
+  const [litQuery, setLitQuery] = useState("");
   const [litLimit, setLitLimit] = useState(10);
   const [litYearsBack, setLitYearsBack] = useState(8);
   const [litPrioritizeRct, setLitPrioritizeRct] = useState(true);
@@ -918,17 +918,36 @@ export default function Home() {
               </aside>
 
               {/* Table */}
-              <div className={styles.tableWrap}>
+              <div
+                className={`${styles.tableWrap} ${loadingSearch || !studies.length ? styles.tableWrapState : ""}`}
+              >
                 {loadingSearch ? (
-                  <div className={styles.spinnerWrap}>
-                    <div className={styles.spinner} />
-                    Searching ClinicalTrials.gov…
+                  <div className={styles.tableStatePanel}>
+                    <div className={styles.spinnerWrap}>
+                      <div className={styles.spinner} />
+                      Searching ClinicalTrials.gov…
+                    </div>
                   </div>
                 ) : !studies.length ? (
-                  <div className={styles.emptyState}>
-                    <span className={styles.emptyMark}>TL</span>
-                    <p className={styles.emptyTitle}>No studies loaded yet</p>
-                    <p className={styles.emptyBody}>Enter a condition, intervention, or search term above and click &ldquo;Study Search&rdquo; to fetch real clinical trial data.</p>
+                  <div className={styles.tableStatePanel}>
+                    <div className={styles.tableEmpty}>
+                      <Image
+                        src="/triallens-logo.png"
+                        alt="TrialLens"
+                        width={80}
+                        height={80}
+                        className={styles.tableEmptyLogo}
+                      />
+                      <p className={styles.tableEmptyTitle}>Start your trial discovery</p>
+                      <p className={styles.tableEmptyBody}>
+                        Search ClinicalTrials.gov using condition, intervention, or keywords. Your results table, filters, and exports will appear here.
+                      </p>
+                      <ul className={styles.tableEmptySteps}>
+                        <li>Enter at least one search field above</li>
+                        <li>Click <strong>Run trial search</strong></li>
+                        <li>Select studies for compare, timeline, and AI analysis</li>
+                      </ul>
+                    </div>
                   </div>
                 ) : (
                   <table>

@@ -732,6 +732,95 @@
   max-height: 640px;
 }
 
+.tableWrapState {
+  min-height: 520px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tableStatePanel {
+  width: 100%;
+  min-height: 520px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tableEmpty {
+  width: 100%;
+  max-width: 460px;
+  padding: 36px 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 14px;
+  border-radius: var(--radius-xl);
+  border: 1px dashed var(--border-strong);
+  background:
+    radial-gradient(ellipse 90% 70% at 50% 0%, rgba(235, 244, 255, 0.9), transparent 72%),
+    linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  box-shadow: var(--shadow-sm);
+}
+
+.tableEmptyLogo {
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+}
+
+.tableEmptyTitle {
+  font-family: var(--font-display), var(--font-sans), sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #0f172a;
+}
+
+.tableEmptyBody {
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--text-secondary);
+}
+
+.tableEmptySteps {
+  width: 100%;
+  margin: 4px 0 0;
+  padding: 14px 16px;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-align: left;
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid var(--border);
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.tableEmptySteps li {
+  position: relative;
+  padding-left: 18px;
+}
+
+.tableEmptySteps li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 8px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent-mid);
+}
+
+.tableEmptySteps strong {
+  color: var(--accent);
+  font-weight: 700;
+}
+
 .tableWrap table,
 .compareTable {
   width: 100%;
@@ -1193,7 +1282,7 @@
   align-items: center;
   justify-content: center;
   gap: 10px;
-  padding: 48px;
+  padding: 24px;
   color: var(--text-muted);
   font-size: 13px;
   font-weight: 600;
