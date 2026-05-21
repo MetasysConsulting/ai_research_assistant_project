@@ -649,9 +649,43 @@ export default function Home() {
     [filteredStudies],
   );
 
+  const activeTabLabel = NAV_ITEMS.find((item) => item.id === activeTab)?.label ?? "Workspace";
+
+  const dashboardStats = useMemo(() => {
+    const recruiting = studies.filter((s) => {
+      const status = s.status.toLowerCase();
+      return status.includes("recruiting") && !status.includes("not");
+    }).length;
+    const withPublications = studies.filter((s) => s.hasPublications).length;
+    const loadedCount = studies.length;
+    const discovered = meta.match(/^\d+/)?.[0];
+
+    return [
+      {
+        label: "Studies loaded",
+        value: loadedCount || discovered || "—",
+        hint: loadedCount ? "Current result set" : "Run trial search",
+      },
+      {
+        label: "Selected",
+        value: selectedStudies.length,
+        hint: "Ready for compare & AI",
+      },
+      {
+        label: "Publications",
+        value: withPublications,
+        hint: "Trials with linked papers",
+      },
+      {
+        label: "Recruiting",
+        value: recruiting,
+        hint: "Active enrollment signal",
+      },
+    ];
+  }, [studies, selectedStudies.length, meta]);
+
   return (
     <div className={styles.page}>
-      {/* Left nav rail */}
       <aside className={styles.leftRail}>
         <div className={styles.railBrand}>
           <div className={styles.railLogo}>TL</div>
@@ -660,6 +694,7 @@ export default function Home() {
             <span className={styles.railBrandSub}>Research</span>
           </div>
         </div>
+        <p className={styles.railSectionLabel}>Workspace</p>
         {NAV_ITEMS.map(({ id, label, Icon }) => (
           <button
             key={id}
@@ -674,32 +709,45 @@ export default function Home() {
             <span className={styles.railLabel}>{label}</span>
           </button>
         ))}
+        <div className={styles.railFooter}>
+          Grounded analysis across ClinicalTrials.gov and PubMed evidence.
+        </div>
       </aside>
 
       <main className={styles.main}>
-        {/* Header */}
-        <div className={styles.headerRow}>
-          <div>
-            <h1 className={styles.headerTitle}>TrialLens</h1>
-            <p className={styles.subtitle}>
-              Clinical trial intelligence workspace for search, comparison, literature review, and grounded analysis.
-            </p>
+        <div className={styles.topBar}>
+          <div className={styles.breadcrumb}>
+            <span>TrialLens</span>
+            <span aria-hidden>/</span>
+            <strong>{activeTabLabel}</strong>
           </div>
-          <div className={styles.topMetrics}>
-            {meta && (
-              <span className={styles.metricPill}>
-                <strong>{meta.split(" ")[0]}</strong>{" "}
-                {meta.split(" ").slice(1).join(" ")}
-              </span>
-            )}
-            <span className={styles.metricPill}>
-              Selected for analysis: <strong>{selectedStudies.length}</strong>
-            </span>
-          </div>
+          <span className={styles.liveBadge}>
+            <span className={styles.liveDot} aria-hidden />
+            Live data
+          </span>
         </div>
 
-        {/* Search card */}
+        <section className={styles.hero}>
+          <div className={styles.heroCopy}>
+            <span className={styles.eyebrow}>Clinical research intelligence</span>
+            <h1 className={styles.headerTitle}>TrialLens</h1>
+            <p className={styles.subtitle}>
+              Search trials, compare protocols, review literature, and run citation-grounded AI analysis in one workspace.
+            </p>
+          </div>
+          <div className={styles.statsGrid}>
+            {dashboardStats.map((stat) => (
+              <div key={stat.label} className={styles.statCard}>
+                <span className={styles.statLabel}>{stat.label}</span>
+                <span className={styles.statValue}>{stat.value}</span>
+                <span className={styles.statHint}>{stat.hint}</span>
+              </div>
+            ))}
+          </div>
+        </section>
+
         <form className={styles.searchCard} onSubmit={handleSearch}>
+          <p className={styles.searchCardTitle}>Trial discovery parameters</p>
           <div className={styles.searchGrid}>
             <div className={styles.inputGroup}>
               <span className={styles.inputLabel}>Condition</span>
@@ -727,20 +775,22 @@ export default function Home() {
           {error && <div className={styles.errorBar}>{error}</div>}
         </form>
 
-        {/* Tab bar */}
-        <div className={styles.tabBar}>
-          <button type="button" className={`${styles.tabBtn} ${activeTab === "results" ? styles.tabActive : ""}`} onClick={() => setActiveTab("results")}>Trials</button>
-          <button type="button" className={`${styles.tabBtn} ${activeTab === "compare" ? styles.tabActive : ""}`} onClick={() => setActiveTab("compare")}>Compare</button>
-          <button type="button" className={`${styles.tabBtn} ${activeTab === "timeline" ? styles.tabActive : ""}`} onClick={() => setActiveTab("timeline")}>Timeline</button>
-          <button type="button" className={`${styles.tabBtn} ${activeTab === "chat" ? styles.tabActive : ""}`} onClick={() => setActiveTab("chat")}>Assistant</button>
-          <button type="button" className={`${styles.tabBtn} ${activeTab === "lit" ? styles.tabActive : ""}`} onClick={() => setActiveTab("lit")}>Literature</button>
-        </div>
+        <section className={styles.workspace}>
+          <div className={styles.tabBar}>
+            <button type="button" className={`${styles.tabBtn} ${activeTab === "results" ? styles.tabActive : ""}`} onClick={() => setActiveTab("results")}>Trials</button>
+            <button type="button" className={`${styles.tabBtn} ${activeTab === "compare" ? styles.tabActive : ""}`} onClick={() => setActiveTab("compare")}>Compare</button>
+            <button type="button" className={`${styles.tabBtn} ${activeTab === "timeline" ? styles.tabActive : ""}`} onClick={() => setActiveTab("timeline")}>Timeline</button>
+            <button type="button" className={`${styles.tabBtn} ${activeTab === "chat" ? styles.tabActive : ""}`} onClick={() => setActiveTab("chat")}>Assistant</button>
+            <button type="button" className={`${styles.tabBtn} ${activeTab === "lit" ? styles.tabActive : ""}`} onClick={() => setActiveTab("lit")}>Literature</button>
+          </div>
 
-        {/* ── Results tab ── */}
+          <div className={styles.workspaceBody}>
         {activeTab === "results" && (
           <section className={styles.panel}>
-            <p className={styles.panelTitle}>Trial search and results</p>
-            <p className={styles.panelSubtitle}>Filter, select, and export studies from ClinicalTrials.gov.</p>
+            <div className={styles.panelHead}>
+              <p className={styles.panelTitle}>Trial search and results</p>
+              <p className={styles.panelSubtitle}>Filter, select, and export studies from ClinicalTrials.gov.</p>
+            </div>
             <div className={styles.toolbar}>
               <button type="button" className={styles.btnSecondary} onClick={selectVisible} disabled={!filteredStudies.length}>Select All Visible</button>
               <button type="button" className={styles.btnSecondary} onClick={removeSelectedFromList} disabled={!selectedStudies.length}>Remove Selected</button>
@@ -906,8 +956,10 @@ export default function Home() {
         {/* ── Compare tab ── */}
         {activeTab === "compare" && (
           <section className={styles.panel}>
-            <p className={styles.panelTitle}>Compare selected trials</p>
-            <p className={styles.panelSubtitle}>Side-by-side protocol and endpoint comparison for selected studies.</p>
+            <div className={styles.panelHead}>
+              <p className={styles.panelTitle}>Compare selected trials</p>
+              <p className={styles.panelSubtitle}>Side-by-side protocol and endpoint comparison for selected studies.</p>
+            </div>
             <div className={styles.compareNotesCard}>
               <div className={styles.compareNotesHead}>
                 <strong>Comparison Notes</strong>
@@ -975,8 +1027,10 @@ export default function Home() {
         {/* ── Timeline tab ── */}
         {activeTab === "timeline" && (
           <section className={styles.panel}>
-            <p className={styles.panelTitle}>Trial timelines</p>
-            <p className={styles.panelSubtitle}>Start-year distribution and per-study timeline markers.</p>
+            <div className={styles.panelHead}>
+              <p className={styles.panelTitle}>Trial timelines</p>
+              <p className={styles.panelSubtitle}>Start-year distribution and per-study timeline markers.</p>
+            </div>
             {!filteredStudies.length ? (
               <div className={styles.emptyState}>
                 <span className={styles.emptyMark}>TM</span>
@@ -1174,8 +1228,10 @@ export default function Home() {
 
         {activeTab === "lit" && (
           <section className={styles.panel}>
-            <p className={styles.panelTitle}>Literature explorer</p>
-            <p className={styles.panelSubtitle}>PubMed shortlist scoring with evidence-grounded Q&amp;A.</p>
+            <div className={styles.panelHead}>
+              <p className={styles.panelTitle}>Literature explorer</p>
+              <p className={styles.panelSubtitle}>PubMed shortlist scoring with evidence-grounded Q&amp;A.</p>
+            </div>
             <form className={styles.litSearchForm} onSubmit={handleLitSearch}>
               <div className={styles.inputGroup}>
                 <span className={styles.inputLabel}>Research query</span>
@@ -1380,6 +1436,8 @@ export default function Home() {
             </div>
           </section>
         )}
+          </div>
+        </section>
       </main>
     </div>
   );
