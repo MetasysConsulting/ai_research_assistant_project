@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import {
   FormEvent,
   KeyboardEvent,
@@ -692,7 +693,16 @@ export default function Home() {
     <div className={styles.page}>
       <aside className={styles.leftRail}>
         <div className={styles.railBrand}>
-          <div className={styles.railLogo}>TL</div>
+          <div className={styles.railLogo}>
+            <Image
+              src="/triallens-logo.png"
+              alt="TrialLens"
+              width={40}
+              height={40}
+              priority
+              className={styles.railLogoImage}
+            />
+          </div>
           <div className={styles.railBrandText}>
             <span className={styles.railBrandName}>TrialLens</span>
             <span className={styles.railBrandSub}>Research</span>
