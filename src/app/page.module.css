@@ -55,22 +55,24 @@
 }
 
 .railLogo {
-  width: 40px;
-  height: 40px;
-  border-radius: 11px;
-  overflow: hidden;
+  width: 44px;
+  height: 44px;
   flex-shrink: 0;
-  display: grid;
-  place-items: center;
-  background: #ffffff;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.22);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  box-shadow: none;
 }
 
 .railLogoImage {
   width: 100%;
   height: 100%;
   object-fit: contain;
+  display: block;
+  border-radius: 10px;
+  mix-blend-mode: screen;
 }
 
 .railBrandText {
