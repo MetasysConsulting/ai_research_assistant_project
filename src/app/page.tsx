@@ -664,7 +664,7 @@ export default function Home() {
       {
         label: "Studies loaded",
         value: loadedCount,
-        hint: hasDataset ? "Current result set" : "Run trial search to populate",
+        hint: hasDataset ? meta || "Current result set" : "Run trial search to populate",
         emptyHint: "No studies in workspace yet",
       },
       {
@@ -686,7 +686,7 @@ export default function Home() {
         emptyHint: "No recruiting trials in view",
       },
     ];
-  }, [studies, selectedStudies.length]);
+  }, [studies, selectedStudies.length, meta]);
 
   return (
     <div className={styles.page}>
