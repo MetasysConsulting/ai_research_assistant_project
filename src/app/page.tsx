@@ -17,8 +17,26 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import {
+  ArrowRight,
+  BookOpen,
+  CalendarDays,
+  Download,
+  GitCompareArrows,
+  MessageSquare,
+  Search,
+  X,
+} from "lucide-react";
 import styles from "./page.module.css";
 import type { PubMedPaper, ShortlistPaper, TrialStudy } from "@/lib/types";
+
+const NAV_ITEMS = [
+  { id: "results" as const, label: "Trials", Icon: Search },
+  { id: "compare" as const, label: "Compare", Icon: GitCompareArrows },
+  { id: "timeline" as const, label: "Timeline", Icon: CalendarDays },
+  { id: "chat" as const, label: "Assistant", Icon: MessageSquare },
+  { id: "lit" as const, label: "Literature", Icon: BookOpen },
+];
 
 type SortKey = "studyId" | "title" | "trialStartDate" | "status" | "primaryEndpoint" | "phase";
 type SortDirection = "asc" | "desc";
@@ -129,8 +147,8 @@ const compareFields: Array<
   { label: "Conditions", render: (s) => s.diseaseNames.join(", ") || "N/A" },
   { label: "Interventions", render: (s) => s.interventions.join(", ") || "N/A" },
   { label: "Biomarkers", render: (s) => s.biomarkers.join(", ") || "N/A" },
-  { label: "Publications", render: (s) => (s.hasPublications ? "✓ Yes" : "No") },
-  { label: "Results", render: (s) => (s.hasResults ? "✓ Yes" : "No") },
+  { label: "Publications", render: (s) => (s.hasPublications ? "Yes" : "No") },
+  { label: "Results", render: (s) => (s.hasResults ? "Yes" : "No") },
 ];
 
 function formatTime(iso: string) {
@@ -635,23 +653,27 @@ export default function Home() {
     <div className={styles.page}>
       {/* Left nav rail */}
       <aside className={styles.leftRail}>
-        <div className={styles.railLogo}>TG</div>
-        {(["results", "compare", "timeline", "chat", "lit"] as const).map((tab, i) => {
-          const icons = ["🔬", "⚖️", "📅", "💬", "📚"];
-          const labels = ["Search", "Compare", "Timeline", "AI Chat", "Lit Explorer"];
-          return (
-            <button
-              key={tab}
-              type="button"
-              className={`${styles.railBtn} ${activeTab === tab ? styles.railBtnActive : ""}`}
-              onClick={() => setActiveTab(tab)}
-              title={labels[i]}
-            >
-              <span>{icons[i]}</span>
-              <span className={styles.railLabel}>{labels[i]}</span>
-            </button>
-          );
-        })}
+        <div className={styles.railBrand}>
+          <div className={styles.railLogo}>TL</div>
+          <div className={styles.railBrandText}>
+            <span className={styles.railBrandName}>TrialLens</span>
+            <span className={styles.railBrandSub}>Research</span>
+          </div>
+        </div>
+        {NAV_ITEMS.map(({ id, label, Icon }) => (
+          <button
+            key={id}
+            type="button"
+            className={`${styles.railBtn} ${activeTab === id ? styles.railBtnActive : ""}`}
+            onClick={() => setActiveTab(id)}
+            title={label}
+          >
+            <span className={styles.railIcon}>
+              <Icon size={16} strokeWidth={1.75} aria-hidden />
+            </span>
+            <span className={styles.railLabel}>{label}</span>
+          </button>
+        ))}
       </aside>
 
       <main className={styles.main}>
@@ -660,7 +682,7 @@ export default function Home() {
           <div>
             <h1 className={styles.headerTitle}>TrialLens</h1>
             <p className={styles.subtitle}>
-              Discover, compare, and query clinical trials from ClinicalTrials.gov — powered by AI.
+              Clinical trial intelligence workspace for search, comparison, literature review, and grounded analysis.
             </p>
           </div>
           <div className={styles.topMetrics}>
@@ -694,10 +716,11 @@ export default function Home() {
           </div>
           <div className={styles.actionsRow}>
             <button type="submit" className={styles.btnPrimary} disabled={loadingSearch}>
-              {loadingSearch ? "Searching…" : "🔍 Study Search"}
+              {loadingSearch ? "Searching..." : "Run trial search"}
             </button>
             <button type="button" className={styles.btnSecondary} onClick={clearFilters}>
-              ✕ Clear Filters
+              <X size={14} strokeWidth={1.75} aria-hidden />
+              Clear filters
             </button>
             <span className={styles.searchHint}>Searches ClinicalTrials.gov in real time</span>
           </div>
@@ -706,20 +729,25 @@ export default function Home() {
 
         {/* Tab bar */}
         <div className={styles.tabBar}>
-          <button type="button" className={`${styles.tabBtn} ${activeTab === "results" ? styles.tabActive : ""}`} onClick={() => setActiveTab("results")}>🔬 Study Search &amp; Results</button>
-          <button type="button" className={`${styles.tabBtn} ${activeTab === "compare" ? styles.tabActive : ""}`} onClick={() => setActiveTab("compare")}>⚖️ Compare Trials</button>
-          <button type="button" className={`${styles.tabBtn} ${activeTab === "timeline" ? styles.tabActive : ""}`} onClick={() => setActiveTab("timeline")}>📅 Timelines</button>
-          <button type="button" className={`${styles.tabBtn} ${activeTab === "chat" ? styles.tabActive : ""}`} onClick={() => setActiveTab("chat")}>💬 AI Assistant</button>
-          <button type="button" className={`${styles.tabBtn} ${activeTab === "lit" ? styles.tabActive : ""}`} onClick={() => setActiveTab("lit")}>📚 Lit Explorer</button>
+          <button type="button" className={`${styles.tabBtn} ${activeTab === "results" ? styles.tabActive : ""}`} onClick={() => setActiveTab("results")}>Trials</button>
+          <button type="button" className={`${styles.tabBtn} ${activeTab === "compare" ? styles.tabActive : ""}`} onClick={() => setActiveTab("compare")}>Compare</button>
+          <button type="button" className={`${styles.tabBtn} ${activeTab === "timeline" ? styles.tabActive : ""}`} onClick={() => setActiveTab("timeline")}>Timeline</button>
+          <button type="button" className={`${styles.tabBtn} ${activeTab === "chat" ? styles.tabActive : ""}`} onClick={() => setActiveTab("chat")}>Assistant</button>
+          <button type="button" className={`${styles.tabBtn} ${activeTab === "lit" ? styles.tabActive : ""}`} onClick={() => setActiveTab("lit")}>Literature</button>
         </div>
 
         {/* ── Results tab ── */}
         {activeTab === "results" && (
           <section className={styles.panel}>
+            <p className={styles.panelTitle}>Trial search and results</p>
+            <p className={styles.panelSubtitle}>Filter, select, and export studies from ClinicalTrials.gov.</p>
             <div className={styles.toolbar}>
               <button type="button" className={styles.btnSecondary} onClick={selectVisible} disabled={!filteredStudies.length}>Select All Visible</button>
               <button type="button" className={styles.btnSecondary} onClick={removeSelectedFromList} disabled={!selectedStudies.length}>Remove Selected</button>
-              <button type="button" className={styles.btnSecondary} onClick={exportSelected} disabled={!selectedStudies.length}>⬇ Export CSV</button>
+              <button type="button" className={styles.btnSecondary} onClick={exportSelected} disabled={!selectedStudies.length}>
+                <Download size={14} strokeWidth={1.75} aria-hidden />
+                Export CSV
+              </button>
             </div>
 
             <div className={styles.filtersLayout}>
@@ -807,7 +835,7 @@ export default function Home() {
                   <div className={styles.collectionList}>
                     {collections.slice(0, 6).map((col) => (
                       <button key={col.id} type="button" className={styles.collectionItem} onClick={() => loadCollection(col)}>
-                        📂 {col.name} ({col.studyIds.length})
+                        {col.name} ({col.studyIds.length})
                       </button>
                     ))}
                   </div>
@@ -823,7 +851,7 @@ export default function Home() {
                   </div>
                 ) : !studies.length ? (
                   <div className={styles.emptyState}>
-                    <span className={styles.emptyIcon}>🔬</span>
+                    <span className={styles.emptyMark}>TL</span>
                     <p className={styles.emptyTitle}>No studies loaded yet</p>
                     <p className={styles.emptyBody}>Enter a condition, intervention, or search term above and click &ldquo;Study Search&rdquo; to fetch real clinical trial data.</p>
                   </div>
@@ -878,7 +906,8 @@ export default function Home() {
         {/* ── Compare tab ── */}
         {activeTab === "compare" && (
           <section className={styles.panel}>
-            <p className={styles.panelTitle}>⚖️ Compare Selected Trials</p>
+            <p className={styles.panelTitle}>Compare selected trials</p>
+            <p className={styles.panelSubtitle}>Side-by-side protocol and endpoint comparison for selected studies.</p>
             <div className={styles.compareNotesCard}>
               <div className={styles.compareNotesHead}>
                 <strong>Comparison Notes</strong>
@@ -901,7 +930,7 @@ export default function Home() {
             </div>
             {!selectedStudies.length ? (
               <div className={styles.emptyState}>
-                <span className={styles.emptyIcon}>⚖️</span>
+                <span className={styles.emptyMark}>CP</span>
                 <p className={styles.emptyTitle}>No studies selected</p>
                 <p className={styles.emptyBody}>Select studies using checkboxes in the Study Search tab, then come back here to compare them side by side.</p>
               </div>
@@ -946,10 +975,11 @@ export default function Home() {
         {/* ── Timeline tab ── */}
         {activeTab === "timeline" && (
           <section className={styles.panel}>
-            <p className={styles.panelTitle}>📅 Trial Timelines</p>
+            <p className={styles.panelTitle}>Trial timelines</p>
+            <p className={styles.panelSubtitle}>Start-year distribution and per-study timeline markers.</p>
             {!filteredStudies.length ? (
               <div className={styles.emptyState}>
-                <span className={styles.emptyIcon}>📅</span>
+                <span className={styles.emptyMark}>TM</span>
                 <p className={styles.emptyTitle}>No trials to visualize</p>
                 <p className={styles.emptyBody}>Run a study search first to see trials plotted on the timeline.</p>
               </div>
@@ -958,17 +988,17 @@ export default function Home() {
                 <div className={styles.chartCard}>
                   <ResponsiveContainer width="100%" height={320}>
                     <ScatterChart margin={{ top: 16, right: 24, bottom: 24, left: 16 }}>
-                      <CartesianGrid strokeDasharray="4 4" stroke="#e2eaf8" />
+                      <CartesianGrid strokeDasharray="4 4" stroke="#e5e7eb" />
                       <XAxis
                         type="number"
                         dataKey="x"
                         name="Start Year"
                         domain={timelineBounds ? [timelineBounds.min - 0.5, timelineBounds.max + 0.5] : ["auto", "auto"]}
                         tickCount={timelineTicks.length || 6}
-                        tick={{ fontSize: 11, fill: "#94a3b8" }}
-                        axisLine={{ stroke: "#e2eaf8" }}
+                        tick={{ fontSize: 11, fill: "#6b7280" }}
+                        axisLine={{ stroke: "#e5e7eb" }}
                         tickLine={false}
-                        label={{ value: "Trial Start Year", position: "insideBottom", offset: -10, fontSize: 11, fill: "#94a3b8" }}
+                        label={{ value: "Trial Start Year", position: "insideBottom", offset: -10, fontSize: 11, fill: "#6b7280" }}
                       />
                       <YAxis
                         type="number"
@@ -977,23 +1007,23 @@ export default function Home() {
                         tick={false}
                         axisLine={false}
                         tickLine={false}
-                        label={{ value: "Trials", angle: -90, position: "insideLeft", fontSize: 11, fill: "#94a3b8" }}
+                        label={{ value: "Trials", angle: -90, position: "insideLeft", fontSize: 11, fill: "#6b7280" }}
                       />
                       <Tooltip
-                        cursor={{ strokeDasharray: "3 3", stroke: "#2563eb" }}
+                        cursor={{ strokeDasharray: "3 3", stroke: "#1f3a5f" }}
                         content={({ payload }) => {
                           const d = payload?.[0]?.payload as { label?: string; status?: string; x?: number } | undefined;
                           if (!d) return null;
                           return (
-                            <div style={{ background: "#fff", border: "1px solid #e2eaf8", borderRadius: 10, padding: "8px 12px", fontSize: 12, boxShadow: "0 4px 12px rgba(15,23,42,0.12)" }}>
-                              <strong style={{ color: "#1d4ed8" }}>{d.label}</strong>
-                              <div style={{ color: "#475569", marginTop: 2 }}>{d.status}</div>
-                              <div style={{ color: "#94a3b8" }}>Start: {d.x}</div>
+                            <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 8, padding: "8px 12px", fontSize: 12, boxShadow: "0 8px 20px rgba(17,24,39,0.08)" }}>
+                              <strong style={{ color: "#1f3a5f" }}>{d.label}</strong>
+                              <div style={{ color: "#4b5563", marginTop: 2 }}>{d.status}</div>
+                              <div style={{ color: "#6b7280" }}>Start: {d.x}</div>
                             </div>
                           );
                         }}
                       />
-                      <Scatter data={timelineChartData} fill="#2563eb" opacity={0.85} />
+                      <Scatter data={timelineChartData} fill="#1f3a5f" opacity={0.9} />
                     </ScatterChart>
                   </ResponsiveContainer>
                 </div>
@@ -1056,7 +1086,7 @@ export default function Home() {
                         setSelectedStudyIds(new Set(t.studyIds));
                       }}
                     >
-                      💬 {t.title}
+                      {t.title}
                     </button>
                   ))}
                 </div>
@@ -1080,8 +1110,8 @@ export default function Home() {
                 <div className={styles.chatMessages}>
                   {!activeThread || !activeThread.messages.length ? (
                     <div className={styles.chatWelcome}>
-                      <span className={styles.chatWelcomeIcon}>🤖</span>
-                      <p className={styles.chatWelcomeTitle}>Ask me anything about your selected trials</p>
+                      <span className={styles.emptyMark}>AI</span>
+                      <p className={styles.chatWelcomeTitle}>Ask about your selected trials</p>
                       <p className={styles.chatWelcomeSub}>
                         I will answer based only on the studies you have selected. Select studies in the Search tab, then start a thread and ask questions.
                       </p>
@@ -1131,8 +1161,8 @@ export default function Home() {
                       disabled={loadingAsk || selectedStudies.length === 0}
                       rows={1}
                     />
-                    <button type="submit" className={styles.chatSendBtn} disabled={loadingAsk || !question.trim() || selectedStudies.length === 0}>
-                      ➤
+                    <button type="submit" className={styles.chatSendBtn} disabled={loadingAsk || !question.trim() || selectedStudies.length === 0} aria-label="Send message">
+                      <ArrowRight size={16} strokeWidth={1.75} aria-hidden />
                     </button>
                   </div>
                 </form>
@@ -1144,7 +1174,8 @@ export default function Home() {
 
         {activeTab === "lit" && (
           <section className={styles.panel}>
-            <p className={styles.panelTitle}>📚 Lit Explorer (PubMed)</p>
+            <p className={styles.panelTitle}>Literature explorer</p>
+            <p className={styles.panelSubtitle}>PubMed shortlist scoring with evidence-grounded Q&amp;A.</p>
             <form className={styles.litSearchForm} onSubmit={handleLitSearch}>
               <div className={styles.inputGroup}>
                 <span className={styles.inputLabel}>Research query</span>
@@ -1181,13 +1212,15 @@ export default function Home() {
                   Include reviews/meta-analyses
                 </label>
                 <button type="submit" className={styles.btnPrimary} disabled={litLoading}>
-                  {litLoading ? "Shortlisting..." : "🔎 Build shortlist"}
+                  {litLoading ? "Shortlisting..." : "Build shortlist"}
                 </button>
                 <button type="button" className={styles.btnSecondary} onClick={exportLitShortlistCsv} disabled={!litShortlist.length}>
-                  ⬇ Export CSV
+                  <Download size={14} strokeWidth={1.75} aria-hidden />
+                  Export CSV
                 </button>
                 <button type="button" className={styles.btnSecondary} onClick={exportLitShortlistJson} disabled={!litShortlist.length}>
-                  ⬇ Export JSON
+                  <Download size={14} strokeWidth={1.75} aria-hidden />
+                  Export JSON
                 </button>
                 <button
                   type="button"
@@ -1195,7 +1228,7 @@ export default function Home() {
                   onClick={addSelectedPmidsToCompareNotes}
                   disabled={!selectedLitPapers.length}
                 >
-                  ➕ Send PMIDs to Compare Notes
+                  Add PMIDs to compare notes
                 </button>
               </div>
             </form>
@@ -1217,7 +1250,7 @@ export default function Home() {
                 {litSessions.slice(0, 8).map((session) => (
                   <div key={session.id} className={styles.litSessionItem}>
                     <button type="button" className={styles.collectionItem} onClick={() => loadLitSession(session)}>
-                      📚 {session.name} ({session.shortlist.length} papers)
+                      {session.name} ({session.shortlist.length} papers)
                     </button>
                     <button
                       type="button"
@@ -1243,7 +1276,7 @@ export default function Home() {
                   <div className={styles.spinnerWrap}><div className={styles.spinner} />Analyzing evidence quality...</div>
                 ) : litShortlist.length === 0 ? (
                   <div className={styles.emptyState}>
-                    <span className={styles.emptyIcon}>📄</span>
+                    <span className={styles.emptyMark}>PM</span>
                     <p className={styles.emptyTitle}>No shortlisted papers yet</p>
                     <p className={styles.emptyBody}>Run a PubMed shortlist search to pull high-signal studies with scoring reasons.</p>
                   </div>
@@ -1259,7 +1292,7 @@ export default function Home() {
                         <a href={paper.url} target="_blank" rel="noreferrer" className={styles.studyLink}>
                           PMID {paper.pmid}
                         </a>
-                        <span className={styles.badge} style={{ background: "#dbeafe", color: "#1d4ed8", border: "1px solid #93c5fd" }}>
+                        <span className={styles.badge} style={{ background: "#eef2f7", color: "#1f3a5f", border: "1px solid #d1d9e6" }}>
                           Score {paper.shortlistScore}
                         </span>
                       </div>
@@ -1292,7 +1325,7 @@ export default function Home() {
                 <div className={styles.chatMessages}>
                   {!litMessages.length ? (
                     <div className={styles.chatWelcome}>
-                      <span className={styles.chatWelcomeIcon}>🧠</span>
+                      <span className={styles.emptyMark}>EV</span>
                       <p className={styles.chatWelcomeTitle}>Ask evidence-based questions</p>
                       <p className={styles.chatWelcomeSub}>
                         I answer only from the selected papers and include PMID citations.
@@ -1337,8 +1370,8 @@ export default function Home() {
                       disabled={litLoadingAsk || selectedLitPapers.length === 0}
                       rows={1}
                     />
-                    <button type="submit" className={styles.chatSendBtn} disabled={litLoadingAsk || !litQuestion.trim() || selectedLitPapers.length === 0}>
-                      ➤
+                    <button type="submit" className={styles.chatSendBtn} disabled={litLoadingAsk || !litQuestion.trim() || selectedLitPapers.length === 0} aria-label="Send literature question">
+                      <ArrowRight size={16} strokeWidth={1.75} aria-hidden />
                     </button>
                   </div>
                 </form>
